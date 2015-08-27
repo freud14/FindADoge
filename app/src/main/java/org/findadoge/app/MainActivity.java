@@ -1,6 +1,8 @@
 package org.findadoge.app;
 
 
+import android.app.Dialog;
+import android.app.DialogFragment;
 import android.app.SearchManager;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
@@ -82,7 +84,7 @@ public class MainActivity extends AppCompatActivity
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        Log.v(TAG, "there");
+        Log.v(TAG, "onCreate");
 
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
@@ -96,25 +98,38 @@ public class MainActivity extends AppCompatActivity
         enableTrackingDialog();
     }
 
-    private void enableTrackingDialog() {
-        if (bound && !service.isEnabled() && !enablingAsked) {
-            enablingAsked = true;
-            AlertDialog.Builder builder = new AlertDialog.Builder(this);
-            builder.setMessage(R.string.enable_tracking_question)
+
+    @Override
+    public void onDestroy() {
+        Log.v(TAG, "onDestroy");
+        super.onDestroy();
+    }
+
+
+    public static class EnableTrackingDialog extends DialogFragment {
+        @Override
+        public Dialog onCreateDialog(Bundle savedInstanceState) {
+            return new AlertDialog.Builder(getActivity())
+                    .setMessage(R.string.enable_tracking_question)
                     .setPositiveButton(R.string.yes, new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int id) {
-                            if (bound) {
-                                service.enableTracking();
-                            }
+                            ((MainActivity) getActivity()).setEnableTracking(true);
                         }
                     })
                     .setNegativeButton(R.string.no, new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int id) {
 
                         }
-                    });
-            AlertDialog dialog = builder.create();
-            dialog.show();
+                    }).create();
+        }
+    }
+
+    private void enableTrackingDialog() {
+        if (bound && !service.isEnabled() && !enablingAsked) {
+            new Exception().printStackTrace();
+            enablingAsked = true;
+            DialogFragment newFragment = new EnableTrackingDialog();
+            newFragment.show(getFragmentManager(), "dialog");
         }
     }
 
@@ -245,29 +260,49 @@ public class MainActivity extends AppCompatActivity
         } else if (enableItem != null) {
             enableItem.setChecked(false);
         }
+
+        if (enableItem != null) {
+            setMapLocationEnable(enableItem.isChecked());
+        }
+    }
+
+    private void setEnableTracking(boolean enable) {
+        if (bound) {
+            if (enable) {
+                service.enableTracking();
+            } else {
+                service.disableTracking();
+            }
+        }
+        setMapLocationEnable(enable);
+    }
+
+    private void setMapLocationEnable(boolean enable) {
+        if (map != null) {
+            map.setMyLocationEnabled(enable);
+            map.getUiSettings().setMyLocationButtonEnabled(enable);
+        }
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
 
-        if (id == R.id.action_settings) {
+        /*if (id == R.id.action_settings) {
             return true;
-        } else if (id == R.id.action_logout) {
+        } else*/
+        if (id == R.id.action_logout) {
             service.disableTracking();
             Util.logout(MainActivity.this);
             return true;
         } else if (id == R.id.action_enable) {
             if (bound) {
                 item.setChecked(!item.isChecked());
-                if (item.isChecked()) {
-                    service.enableTracking();
-                } else {
-                    service.disableTracking();
-                }
             } else if (item.isChecked()) {
                 item.setChecked(false);
             }
+            setEnableTracking(item.isChecked());
+            return true;
         }
 
         return super.onOptionsItemSelected(item);
@@ -277,8 +312,6 @@ public class MainActivity extends AppCompatActivity
     public void onMapReady(GoogleMap gmap) {
         map = gmap;
 
-        map.setMyLocationEnabled(true);
-        map.getUiSettings().setMyLocationButtonEnabled(true);
         map.getUiSettings().setZoomControlsEnabled(true);
         map.getUiSettings().setMapToolbarEnabled(true);
 
