@@ -1,0 +1,42 @@
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion 23
+    buildToolsVersion "23.0.0"
+
+    defaultConfig {
+        applicationId "org.findadoge.app"
+        minSdkVersion 15
+        targetSdkVersion 23
+        versionCode 1
+        versionName "1.0"
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+dependencies {
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+    // support des vielles device
+    // Support des vielles design avec material
+    // injection de component ui dans tes view très nice
+    // lib network, il yen a d'autre aussi, perso jutilise elle
+    // permet de mettre des images template ou default assez facilement avec du text dedans
+    compile 'com.parse.bolts:bolts-android:1.2.1'
+    compile 'com.parse:parse-android:1.10.1'
+    compile 'com.android.support:appcompat-v7:23.0.0'
+    compile 'com.android.support:design:23.0.0'
+    compile 'com.google.android.gms:play-services:7.8.0'
+    compile 'com.jakewharton:butterknife:7.0.1'
+    compile 'com.google.code.gson:gson:2.3'
+    compile 'com.koushikdutta.ion:ion:2.+'
+    compile 'com.amulyakhare:com.amulyakhare.textdrawable:1.0.1'
+    compile group: 'edu.gatech.gtri.bk-tree', name: 'bk-tree', version: '1.0'
+    compile group: 'edu.gatech.gtri.string-metric', name: 'string-metric', version: '1.0'
+
+    compile 'com.google.maps.android:android-maps-utils:0.4'
+}
