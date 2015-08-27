@@ -97,7 +97,7 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void enableTrackingDialog() {
-        if(bound && !service.isEnabled() && !enablingAsked) {
+        if (bound && !service.isEnabled() && !enablingAsked) {
             enablingAsked = true;
             AlertDialog.Builder builder = new AlertDialog.Builder(this);
             builder.setMessage(R.string.enable_tracking_question)
@@ -142,7 +142,13 @@ public class MainActivity extends AppCompatActivity
                     Toast.makeText(MainActivity.this, R.string.search_error, Toast.LENGTH_SHORT).show();
                     return;
                 }
+
                 ParseGeoPoint point = object.getParseGeoPoint("currentPosition");
+                if (point == null) {
+                    Toast.makeText(MainActivity.this, R.string.search_no_location_found, Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
                 LatLng latLng = new LatLng(point.getLatitude(), point.getLongitude());
 
                 map.moveCamera(CameraUpdateFactory.newLatLng(latLng));
@@ -311,9 +317,15 @@ public class MainActivity extends AppCompatActivity
             query.findInBackground(new FindCallback<ParseUser>() {
                 @Override
                 public void done(List<ParseUser> objects, ParseException e) {
+                    if (e != null || objects == null) {
+                        return;
+                    }
+
                     userClusterManager.clearItems();
                     for (ParseUser obj : objects) {
-                        userClusterManager.addItem(new UserMarker(obj));
+                        if (obj.getParseGeoPoint("currentPosition") != null) {
+                            userClusterManager.addItem(new UserMarker(obj));
+                        }
                     }
                     userClusterManager.cluster();
                     Log.v(TAG, "map update: " + objects.size());

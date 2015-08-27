@@ -60,7 +60,9 @@ public class LocationUpdaterService extends Service
 
     public void onDestroy() {
         disableTracking();
-        googleApiClient.disconnect();
+        if (googleApiClient != null) {
+            googleApiClient.disconnect();
+        }
     }
 
     @Override
@@ -88,7 +90,9 @@ public class LocationUpdaterService extends Service
 
     @Override
     public void onConnectionSuspended(int cause) {
-        googleApiClient.connect();
+        if (googleApiClient != null) {
+            googleApiClient.connect();
+        }
     }
 
     @Override
@@ -104,7 +108,7 @@ public class LocationUpdaterService extends Service
     @Override
     public void setFocus() {
         isFocused = true;
-        if (googleApiClient.isConnected()) {
+        if (googleApiClient != null && googleApiClient.isConnected()) {
             updateStatus();
         }
     }
@@ -112,7 +116,7 @@ public class LocationUpdaterService extends Service
     @Override
     public void setUnfocus() {
         isFocused = false;
-        if (googleApiClient.isConnected()) {
+        if (googleApiClient != null && googleApiClient.isConnected()) {
             updateStatus();
         }
     }
@@ -142,20 +146,22 @@ public class LocationUpdaterService extends Service
     }
 
     private void updateStatus() {
-        LocationServices.FusedLocationApi.removeLocationUpdates(googleApiClient, this);
+        if (googleApiClient != null) {
+            LocationServices.FusedLocationApi.removeLocationUpdates(googleApiClient, this);
 
-        if (isEnable) {
-            LocationRequest locationRequest = new LocationRequest();
-            if (isFocused) {
-                locationRequest.setInterval(UPDATE_INTERVAL_WHEN_FOCUSED_IN_MILLISECONDS);
-                locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
-                //locationRequest.setSmallestDisplacement(10);
-            } else {
-                locationRequest.setInterval(UPDATE_INTERVAL_WHEN_UNFOCUSED_IN_MILLISECONDS);
-                locationRequest.setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY);
-                //locationRequest.setSmallestDisplacement(10);
+            if (isEnable) {
+                LocationRequest locationRequest = new LocationRequest();
+                if (isFocused) {
+                    locationRequest.setInterval(UPDATE_INTERVAL_WHEN_FOCUSED_IN_MILLISECONDS);
+                    locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+                    //locationRequest.setSmallestDisplacement(10);
+                } else {
+                    locationRequest.setInterval(UPDATE_INTERVAL_WHEN_UNFOCUSED_IN_MILLISECONDS);
+                    locationRequest.setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY);
+                    //locationRequest.setSmallestDisplacement(10);
+                }
+                LocationServices.FusedLocationApi.requestLocationUpdates(googleApiClient, locationRequest, this);
             }
-            LocationServices.FusedLocationApi.requestLocationUpdates(googleApiClient, locationRequest, this);
         }
     }
 
