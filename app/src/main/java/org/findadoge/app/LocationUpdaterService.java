@@ -83,9 +83,11 @@ public class LocationUpdaterService extends Service
         sendBroadcast(intent);
 
         ParseUser currentUser = ParseUser.getCurrentUser();
-        ParseGeoPoint parseLocation = new ParseGeoPoint(currentLocation.getLatitude(), currentLocation.getLongitude());
-        currentUser.put("currentPosition", parseLocation);
-        currentUser.saveInBackground();
+        if (currentUser != null) {
+            ParseGeoPoint parseLocation = new ParseGeoPoint(currentLocation.getLatitude(), currentLocation.getLongitude());
+            currentUser.put("currentPosition", parseLocation);
+            currentUser.saveInBackground();
+        }
     }
 
     @Override

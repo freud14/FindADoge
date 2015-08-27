@@ -254,6 +254,7 @@ public class MainActivity extends AppCompatActivity
         if (id == R.id.action_settings) {
             return true;
         } else if (id == R.id.action_logout) {
+            service.disableTracking();
             Util.logout(MainActivity.this);
             return true;
         } else if (id == R.id.action_enable) {
