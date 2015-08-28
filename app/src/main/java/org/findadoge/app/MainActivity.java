@@ -17,6 +17,7 @@ import android.os.IBinder;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.SearchView;
+import android.text.format.DateFormat;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -43,6 +44,7 @@ import org.findadoge.app.ILocationUpdaterService.ILocationUpdaterBinder;
 import org.findadoge.app.util.UIUpdater;
 import org.findadoge.app.util.Util;
 
+import java.util.Date;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity
@@ -370,7 +372,7 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
-    public static class UserMarker implements ClusterItem {
+    public class UserMarker implements ClusterItem {
         private final ParseUser user;
 
         public UserMarker(ParseUser user) {
@@ -386,6 +388,13 @@ public class MainActivity extends AppCompatActivity
         public String getTitle() {
             return user.getUsername();
         }
+
+        public String getSnippet() {
+            Date lastUpdateTime = user.getUpdatedAt();
+
+            DateFormat df = new DateFormat();
+            return getString(R.string.last_update_label) + df.format(getString(R.string.date_format), lastUpdateTime);
+        }
     }
 
     public static class UserRenderer extends DefaultClusterRenderer<UserMarker> {
@@ -397,6 +406,7 @@ public class MainActivity extends AppCompatActivity
         @Override
         protected void onBeforeClusterItemRendered(UserMarker userMarker, MarkerOptions markerOptions) {
             markerOptions.title(userMarker.getTitle());
+            markerOptions.snippet(userMarker.getSnippet());
         }
 
         @Override

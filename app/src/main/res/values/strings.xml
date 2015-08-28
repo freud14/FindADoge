@@ -12,8 +12,10 @@
     <string name="search_no_location_found">No location found for this user</string>
     <string name="enable">Enable tracking</string>
 
-    <string name="enable_tracking_question">The position tracking is disable.  Do you want to start sharing your position?</string>
+    <string name="enable_tracking_question">The position tracking is disable. Do you want to start sharing your position?</string>
     <string name="yes">Yes</string>
     <string name="no">No</string>
 
+    <string name="last_update_label">Last update: </string>
+    <string name="date_format">dd MMMM yyyy \'at\' HH:mm:ss</string>
 </resources>
