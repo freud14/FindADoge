@@ -130,8 +130,8 @@ public class MainActivity extends AppCompatActivity
         if (bound && !service.isEnabled() && !enablingAsked) {
             new Exception().printStackTrace();
             enablingAsked = true;
-            DialogFragment newFragment = new EnableTrackingDialog();
-            newFragment.show(getFragmentManager(), "dialog");
+//            DialogFragment newFragment = new EnableTrackingDialog();
+//            newFragment.show(getFragmentManager(), "dialog");
         } else if (bound && service.isEnabled()) {
             enablingAsked = true;
         }
@@ -352,6 +352,7 @@ public class MainActivity extends AppCompatActivity
             ParseQuery<ParseUser> query = ParseUser.getQuery();
 
             query.whereNotEqualTo("username", ParseUser.getCurrentUser().getUsername());
+            query.whereExists("currentPosition");
             query.findInBackground(new FindCallback<ParseUser>() {
                 @Override
                 public void done(List<ParseUser> objects, ParseException e) {
@@ -361,9 +362,7 @@ public class MainActivity extends AppCompatActivity
 
                     userClusterManager.clearItems();
                     for (ParseUser obj : objects) {
-                        if (obj.getParseGeoPoint("currentPosition") != null) {
-                            userClusterManager.addItem(new UserMarker(obj));
-                        }
+                        userClusterManager.addItem(new UserMarker(obj));
                     }
                     userClusterManager.cluster();
                     Log.v(TAG, "map update: " + objects.size());
