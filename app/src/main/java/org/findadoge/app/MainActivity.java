@@ -23,16 +23,13 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Toast;
 
+import com.androidmapsextensions.ClusteringSettings;
+import com.androidmapsextensions.GoogleMap;
+import com.androidmapsextensions.Marker;
+import com.androidmapsextensions.MarkerOptions;
+import com.androidmapsextensions.SupportMapFragment;
 import com.google.android.gms.maps.CameraUpdateFactory;
-import com.google.android.gms.maps.GoogleMap;
-import com.google.android.gms.maps.OnMapReadyCallback;
-import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.MarkerOptions;
-import com.google.maps.android.clustering.Cluster;
-import com.google.maps.android.clustering.ClusterItem;
-import com.google.maps.android.clustering.ClusterManager;
-import com.google.maps.android.clustering.view.DefaultClusterRenderer;
 import com.parse.FindCallback;
 import com.parse.GetCallback;
 import com.parse.ParseException;
@@ -45,14 +42,15 @@ import org.findadoge.app.util.UIUpdater;
 import org.findadoge.app.util.Util;
 
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
-public class MainActivity extends AppCompatActivity
-        implements OnMapReadyCallback {
+public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
 
     private GoogleMap map;
-    private ClusterManager<UserMarker> userClusterManager;
+    private Map<String, UserMarker> userMarkerMap = new HashMap<>();
 
     private boolean isInitializedCameraPosition = false;
     private Location lastLocation;
@@ -90,7 +88,7 @@ public class MainActivity extends AppCompatActivity
 
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
-        mapFragment.getMapAsync(this);
+        map = mapFragment.getExtendedMap();
 
         Intent intent = new Intent(this, LocationUpdaterService.class);
         startService(intent);
@@ -197,6 +195,8 @@ public class MainActivity extends AppCompatActivity
         registerReceiver(locationUpdaterReceiver, filter);
 
         mapUpdateScheduler.startUpdates();
+
+        setUpMap();
     }
 
     @Override
@@ -292,9 +292,6 @@ public class MainActivity extends AppCompatActivity
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
 
-        /*if (id == R.id.action_settings) {
-            return true;
-        } else*/
         if (id == R.id.action_logout) {
             service.disableTracking();
             Util.logout(MainActivity.this);
@@ -312,18 +309,14 @@ public class MainActivity extends AppCompatActivity
         return super.onOptionsItemSelected(item);
     }
 
-    @Override
-    public void onMapReady(GoogleMap gmap) {
-        map = gmap;
-
+    public void setUpMap() {
         map.getUiSettings().setZoomControlsEnabled(true);
         map.getUiSettings().setMapToolbarEnabled(true);
 
-        userClusterManager = new ClusterManager<>(this, map);
-        userClusterManager.setRenderer(new UserRenderer(this, map, userClusterManager));
+        ClusteringSettings clusteringSettings = new ClusteringSettings();
+        clusteringSettings.addMarkersDynamically(true);
 
-        map.setOnCameraChangeListener(userClusterManager);
-        map.setOnMarkerClickListener(userClusterManager);
+        map.setClustering(clusteringSettings);
 
         updateMap();
     }
@@ -360,25 +353,57 @@ public class MainActivity extends AppCompatActivity
                         return;
                     }
 
-                    userClusterManager.clearItems();
+                    Map<String, ParseUser> userMap = new HashMap<>();
                     for (ParseUser obj : objects) {
-                        userClusterManager.addItem(new UserMarker(obj));
+                        userMap.put(obj.getUsername(), obj);
                     }
-                    userClusterManager.cluster();
+                    for (Map.Entry<String, UserMarker> entry : userMarkerMap.entrySet()) {
+                        String username = entry.getKey();
+                        ParseUser user = userMap.get(username);
+                        UserMarker userMarker = entry.getValue();
+                        if (user != null) {
+                            userMarker.setUser(user);
+                            Marker marker = userMarker.getMarker();
+                            marker.setTitle(userMarker.getTitle());
+                            marker.setPosition(userMarker.getPosition());
+                            marker.setSnippet(userMarker.getSnippet());
+                            userMap.remove(username);
+                        } else {
+                            userMarker.getMarker().remove();
+                            userMarkerMap.remove(username);
+                        }
+                    }
+                    for (ParseUser obj : userMap.values()) {
+                        UserMarker userMarker = new UserMarker(obj);
+                        userMarkerMap.put(obj.getUsername(), userMarker);
+
+                        userMarker.setMarker(map.addMarker(new MarkerOptions()
+                                .title(userMarker.getTitle())
+                                .position(userMarker.getPosition())
+                                .snippet(userMarker.getSnippet())));
+                    }
+                    Marker m = map.getMarkerShowingInfoWindow();
+                    if (m != null && !m.isCluster()) {
+                        m.showInfoWindow();
+                    }
                     Log.v(TAG, "map update: " + objects.size());
                 }
             });
         }
     }
 
-    public class UserMarker implements ClusterItem {
-        private final ParseUser user;
+    public class UserMarker {
+        private ParseUser user;
+        private Marker marker;
 
         public UserMarker(ParseUser user) {
             this.user = user;
         }
 
-        @Override
+        public void setUser(ParseUser user) {
+            this.user = user;
+        }
+
         public LatLng getPosition() {
             ParseGeoPoint point = user.getParseGeoPoint("currentPosition");
             return new LatLng(point.getLatitude(), point.getLongitude());
@@ -395,23 +420,13 @@ public class MainActivity extends AppCompatActivity
                     DateUtils.MINUTE_IN_MILLIS,
                     DateUtils.WEEK_IN_MILLIS, 0).toString();
         }
-    }
 
-    public static class UserRenderer extends DefaultClusterRenderer<UserMarker> {
-
-        public UserRenderer(Context context, GoogleMap map, ClusterManager<UserMarker> clusterManager) {
-            super(context, map, clusterManager);
+        public Marker getMarker() {
+            return marker;
         }
 
-        @Override
-        protected void onBeforeClusterItemRendered(UserMarker userMarker, MarkerOptions markerOptions) {
-            markerOptions.title(userMarker.getTitle());
-            markerOptions.snippet(userMarker.getSnippet());
-        }
-
-        @Override
-        protected boolean shouldRenderAsCluster(Cluster cluster) {
-            return cluster.getSize() > 1;
+        public void setMarker(Marker marker) {
+            this.marker = marker;
         }
     }
 }
