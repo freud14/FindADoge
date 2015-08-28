@@ -17,7 +17,7 @@ import android.os.IBinder;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.SearchView;
-import android.text.format.DateFormat;
+import android.text.format.DateUtils;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -390,9 +390,10 @@ public class MainActivity extends AppCompatActivity
 
         public String getSnippet() {
             Date lastUpdateTime = user.getUpdatedAt();
-
-            DateFormat df = new DateFormat();
-            return getString(R.string.last_update_label) + df.format(getString(R.string.date_format), lastUpdateTime);
+            return DateUtils.getRelativeDateTimeString(MainActivity.this,
+                    lastUpdateTime.getTime(),
+                    DateUtils.MINUTE_IN_MILLIS,
+                    DateUtils.WEEK_IN_MILLIS, 0).toString();
         }
     }
 
