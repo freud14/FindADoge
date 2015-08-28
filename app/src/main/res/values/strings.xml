@@ -15,4 +15,6 @@
     <string name="enable_tracking_question">The position tracking is disable. Do you want to start sharing your position?</string>
     <string name="yes">Yes</string>
     <string name="no">No</string>
+
+    <string name="now">In the last minute</string>
 </resources>

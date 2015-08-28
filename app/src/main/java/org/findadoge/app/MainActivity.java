@@ -11,6 +11,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
+import android.graphics.Color;
 import android.location.Location;
 import android.os.Bundle;
 import android.os.IBinder;
@@ -19,8 +20,14 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.SearchView;
 import android.text.format.DateUtils;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.ListView;
+import android.widget.PopupWindow;
 import android.widget.Toast;
 
 import com.androidmapsextensions.ClusteringSettings;
@@ -41,6 +48,7 @@ import org.findadoge.app.ILocationUpdaterService.ILocationUpdaterBinder;
 import org.findadoge.app.util.UIUpdater;
 import org.findadoge.app.util.Util;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -126,7 +134,6 @@ public class MainActivity extends AppCompatActivity {
 
     private void enableTrackingDialog() {
         if (bound && !service.isEnabled() && !enablingAsked) {
-            new Exception().printStackTrace();
             enablingAsked = true;
 //            DialogFragment newFragment = new EnableTrackingDialog();
 //            newFragment.show(getFragmentManager(), "dialog");
@@ -315,8 +322,46 @@ public class MainActivity extends AppCompatActivity {
 
         ClusteringSettings clusteringSettings = new ClusteringSettings();
         clusteringSettings.addMarkersDynamically(true);
-
         map.setClustering(clusteringSettings);
+
+        map.setInfoWindowAdapter(new GoogleMap.InfoWindowAdapter() {
+
+            @Override
+            public View getInfoWindow(Marker marker) {
+                return null;
+            }
+
+            @Override
+            public View getInfoContents(Marker marker) {
+                if (marker.isCluster()) {
+                    List<Marker> markers = marker.getMarkers();
+                    final List<UserMarker> userMarkers = new ArrayList<>();
+                    for (Marker mark : markers) {
+                        userMarkers.add((UserMarker) mark.getData());
+                    }
+
+                    final PopupWindow popupWindow = new PopupWindow(MainActivity.this);
+                    ListView list = new ListView(MainActivity.this);
+                    list.setBackgroundColor(Color.WHITE);
+                    popupWindow.setContentView(list);
+                    popupWindow.setFocusable(true);
+                    list.setAdapter(new ArrayAdapter<>(
+                            MainActivity.this,
+                            android.R.layout.simple_dropdown_item_1line, userMarkers));
+                    list.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                        @Override
+                        public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                            findUser(userMarkers.get(position).getTitle());
+                            popupWindow.dismiss();
+                        }
+                    });
+                    popupWindow.showAtLocation(findViewById(R.id.map), Gravity.CENTER, 0, 0);
+                    popupWindow.update(0, 0, 600, 600);
+                }
+
+                return null;
+            }
+        });
 
         updateMap();
     }
@@ -357,6 +402,7 @@ public class MainActivity extends AppCompatActivity {
                     for (ParseUser obj : objects) {
                         userMap.put(obj.getUsername(), obj);
                     }
+                    List<String> keyToDelete = new ArrayList<>();
                     for (Map.Entry<String, UserMarker> entry : userMarkerMap.entrySet()) {
                         String username = entry.getKey();
                         ParseUser user = userMap.get(username);
@@ -370,8 +416,12 @@ public class MainActivity extends AppCompatActivity {
                             userMap.remove(username);
                         } else {
                             userMarker.getMarker().remove();
+                            keyToDelete.add(username);
                             userMarkerMap.remove(username);
                         }
+                    }
+                    for (String key : keyToDelete) {
+                        userMarkerMap.remove(key);
                     }
                     for (ParseUser obj : userMap.values()) {
                         UserMarker userMarker = new UserMarker(obj);
@@ -381,6 +431,7 @@ public class MainActivity extends AppCompatActivity {
                                 .title(userMarker.getTitle())
                                 .position(userMarker.getPosition())
                                 .snippet(userMarker.getSnippet())));
+                        userMarker.getMarker().setData(userMarker);
                     }
                     Marker m = map.getMarkerShowingInfoWindow();
                     if (m != null && !m.isCluster()) {
@@ -415,10 +466,15 @@ public class MainActivity extends AppCompatActivity {
 
         public String getSnippet() {
             Date lastUpdateTime = user.getUpdatedAt();
-            return DateUtils.getRelativeDateTimeString(MainActivity.this,
-                    lastUpdateTime.getTime(),
-                    DateUtils.MINUTE_IN_MILLIS,
-                    DateUtils.WEEK_IN_MILLIS, 0).toString();
+            long timeDiff = System.currentTimeMillis() - lastUpdateTime.getTime();
+            if (timeDiff < 60 * 1000) {
+                return getString(R.string.now);
+            } else {
+                return DateUtils.getRelativeDateTimeString(MainActivity.this,
+                        lastUpdateTime.getTime(),
+                        DateUtils.MINUTE_IN_MILLIS,
+                        DateUtils.WEEK_IN_MILLIS, 0).toString();
+            }
         }
 
         public Marker getMarker() {
@@ -427,6 +483,10 @@ public class MainActivity extends AppCompatActivity {
 
         public void setMarker(Marker marker) {
             this.marker = marker;
+        }
+
+        public String toString() {
+            return getTitle();
         }
     }
 }
