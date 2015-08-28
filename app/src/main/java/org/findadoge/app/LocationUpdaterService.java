@@ -77,16 +77,17 @@ public class LocationUpdaterService extends Service
     @Override
     public void onLocationChanged(Location location) {
         currentLocation = location;
+        if (isEnable) {
+            Intent intent = new Intent(ILocationUpdaterService.POSITION_UPDATE_BROADCAST);
+            intent.putExtra(ILocationUpdaterService.POSITION_UPDATE_LOCATION_FIELD, location);
+            sendBroadcast(intent);
 
-        Intent intent = new Intent(ILocationUpdaterService.POSITION_UPDATE_BROADCAST);
-        intent.putExtra(ILocationUpdaterService.POSITION_UPDATE_LOCATION_FIELD, location);
-        sendBroadcast(intent);
-
-        ParseUser currentUser = ParseUser.getCurrentUser();
-        if (currentUser != null) {
-            ParseGeoPoint parseLocation = new ParseGeoPoint(currentLocation.getLatitude(), currentLocation.getLongitude());
-            currentUser.put("currentPosition", parseLocation);
-            currentUser.saveInBackground();
+            ParseUser currentUser = ParseUser.getCurrentUser();
+            if (currentUser != null) {
+                ParseGeoPoint parseLocation = new ParseGeoPoint(currentLocation.getLatitude(), currentLocation.getLongitude());
+                currentUser.put("currentPosition", parseLocation);
+                currentUser.saveInBackground();
+            }
         }
     }
 
@@ -131,6 +132,12 @@ public class LocationUpdaterService extends Service
     @Override
     public void disableTracking() {
         changeEnabling(false);
+
+        ParseUser currentUser = ParseUser.getCurrentUser();
+        if (currentUser != null) {
+            currentUser.remove("currentPosition");
+            currentUser.saveInBackground();
+        }
     }
 
     private void changeEnabling(boolean enable) {

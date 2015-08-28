@@ -130,6 +130,8 @@ public class MainActivity extends AppCompatActivity
             enablingAsked = true;
             DialogFragment newFragment = new EnableTrackingDialog();
             newFragment.show(getFragmentManager(), "dialog");
+        } else if (bound && service.isEnabled()) {
+            enablingAsked = true;
         }
     }
 
