@@ -13,6 +13,7 @@ import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.graphics.Color;
 import android.location.Location;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.support.v7.app.AlertDialog;
@@ -23,9 +24,9 @@ import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
-import android.widget.ListPopupWindow;
 import android.widget.ListView;
 import android.widget.PopupWindow;
 import android.widget.Toast;
@@ -330,15 +331,9 @@ public class MainActivity extends AppCompatActivity {
         clusteringSettings.addMarkersDynamically(true);
         map.setClustering(clusteringSettings);
 
-        map.setInfoWindowAdapter(new GoogleMap.InfoWindowAdapter() {
-
+        map.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
             @Override
-            public View getInfoWindow(Marker marker) {
-                return null;
-            }
-
-            @Override
-            public View getInfoContents(Marker marker) {
+            public boolean onMarkerClick(Marker marker) {
                 if (marker.isCluster()) {
                     List<Marker> markers = marker.getMarkers();
                     final List<User> users = new ArrayList<>();
@@ -346,15 +341,21 @@ public class MainActivity extends AppCompatActivity {
                         users.add((User) userMarker.getData());
                     }
 
-                    ListPopupWindow s = new ListPopupWindow(MainActivity.this);
                     final PopupWindow popupWindow = new PopupWindow(MainActivity.this);
                     ListView list = new ListView(MainActivity.this);
                     list.setBackgroundColor(Color.WHITE);
                     popupWindow.setContentView(list);
+                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+                        popupWindow.setWindowLayoutMode(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+                    } else {
+                        popupWindow.setWidth(ViewGroup.LayoutParams.MATCH_PARENT);
+                        popupWindow.setHeight(ViewGroup.LayoutParams.WRAP_CONTENT);
+                    }
                     popupWindow.setFocusable(true);
                     list.setAdapter(new ArrayAdapter<>(
                             MainActivity.this,
-                            android.R.layout.simple_dropdown_item_1line, users));
+                            android.R.layout.simple_list_item_1,
+                            users));
                     list.setOnItemClickListener(new AdapterView.OnItemClickListener() {
                         @Override
                         public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
@@ -363,10 +364,9 @@ public class MainActivity extends AppCompatActivity {
                         }
                     });
                     popupWindow.showAtLocation(findViewById(R.id.map), Gravity.CENTER, 0, 0);
-                    popupWindow.update(0, 0, 600, 600);
+                    return true;
                 }
-
-                return null;
+                return false;
             }
         });
 
