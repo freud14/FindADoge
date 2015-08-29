@@ -1,0 +1,20 @@
+<resources>
+    <string name="app_name">FindADoge</string>
+    <string name="app_title">Trouver un doge</string>
+
+    <string name="login">Se connecter</string>
+    <string name="logout">Se déconnecter</string>
+    <string name="signup">S\'enregistrer</string>
+    <string name="action_settings">Paramètres</string>
+    <string name="action_search">Rechercher</string>
+    <string name="search_hint">Rerchercher un utilisateur</string>
+    <string name="search_error">Aucun utilisateur trouvé</string>
+    <string name="search_no_location_found">Pas d\'emplcament trouvé pour l\'utilisateur</string>
+    <string name="enable">Activer la localisation</string>
+
+    <string name="enable_tracking_question">La localisation est désactée. Voulez-vous commencer à partager votre position?</string>
+    <string name="yes">Oui</string>
+    <string name="no">Non</string>
+
+    <string name="now">Dans la dernière minute</string>
+</resources>

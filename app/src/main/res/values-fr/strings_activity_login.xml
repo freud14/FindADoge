@@ -1,0 +1,19 @@
+<resources>
+    <!-- Strings related to login -->
+    <string name="title_activity_login">Se connecter</string>
+    <string name="title_activity_signup">Se déconnecter</string>
+    <string name="prompt_username">Nom d\'utilisateur</string>
+    <string name="prompt_password">Mot de passe</string>
+    <string name="prompt_password_again">Mot de passe à nouveau</string>
+    <string name="error_intro">"Veuillez "</string>
+    <string name="error_blank_username">entrer un nom d\'utilisateur</string>
+    <string name="error_blank_password">entrer un mot de passe</string>
+    <string name="error_mismatched_passwords">entrer le mot de passe à nouveau</string>
+    <string name="error_join">" et "</string>
+    <string name="error_end">.</string>
+    <string name="progress_login">Connexion en cours&#8230;</string>
+    <string name="progress_signup">Enregistrement en cours&#8230;</string>
+    <string name="progress_logout">Déconnexion en cours&#8230;</string>
+
+    <string name="error_login">Erreur pendant la connexion. Veuillez vérifier vos informations.</string>
+</resources>
