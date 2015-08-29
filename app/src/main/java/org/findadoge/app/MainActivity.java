@@ -48,12 +48,15 @@ import org.findadoge.app.util.UIUpdater;
 import org.findadoge.app.util.Util;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
+
+    private static final int ENABLE_TRACKING_ASKING_INTERVAL = 4 * 60 * 60 * 1000; // 4 hours
 
     private GoogleMap map;
     private Map<String, Marker> userMarkerMap = new HashMap<>();
@@ -65,7 +68,7 @@ public class MainActivity extends AppCompatActivity {
     private boolean bound = false;
 
     private MenuItem enableItem;
-    private boolean enablingAsked = false;
+    private Date lastTimeEnablingAsked = null;
 
     private UIUpdater mapUpdateScheduler = new UIUpdater(new Runnable() {
         @Override
@@ -104,13 +107,17 @@ public class MainActivity extends AppCompatActivity {
         enableTrackingDialog();
     }
 
-
     @Override
-    public void onDestroy() {
-        Log.v(TAG, "onDestroy");
-        super.onDestroy();
+    public void onSaveInstanceState(Bundle savedInstanceState) {
+        super.onSaveInstanceState(savedInstanceState);
+        savedInstanceState.putSerializable("lastTimeEnablingAsked", lastTimeEnablingAsked);
     }
 
+    @Override
+    public void onRestoreInstanceState(Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+        lastTimeEnablingAsked = (Date) savedInstanceState.getSerializable("savedInstanceState");
+    }
 
     public static class EnableTrackingDialog extends DialogFragment {
         @Override
@@ -131,12 +138,15 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void enableTrackingDialog() {
-        if (bound && !service.isEnabled() && !enablingAsked) {
-            enablingAsked = true;
-//            DialogFragment newFragment = new EnableTrackingDialog();
-//            newFragment.show(getFragmentManager(), "dialog");
+        Date timeAgo = new Date();
+        timeAgo.setTime(System.currentTimeMillis() - ENABLE_TRACKING_ASKING_INTERVAL);
+        if (bound && !service.isEnabled()
+                && (lastTimeEnablingAsked == null || lastTimeEnablingAsked.before(timeAgo))) {
+            lastTimeEnablingAsked = new Date();
+            DialogFragment newFragment = new EnableTrackingDialog();
+            newFragment.show(getFragmentManager(), "dialog");
         } else if (bound && service.isEnabled()) {
-            enablingAsked = true;
+            lastTimeEnablingAsked = new Date();
         }
     }
 
