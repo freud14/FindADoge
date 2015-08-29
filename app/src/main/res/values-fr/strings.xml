@@ -12,7 +12,7 @@
     <string name="search_no_location_found">Pas d\'emplcament trouvé pour l\'utilisateur</string>
     <string name="enable">Activer la localisation</string>
 
-    <string name="enable_tracking_question">La localisation est désactée. Voulez-vous commencer à partager votre position?</string>
+    <string name="enable_tracking_question">La localisation est désactivée. Voulez-vous commencer à partager votre position?</string>
     <string name="yes">Oui</string>
     <string name="no">Non</string>
 
