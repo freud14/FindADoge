@@ -7,7 +7,7 @@
     <string name="signup">S\'enregistrer</string>
     <string name="action_settings">Paramètres</string>
     <string name="action_search">Rechercher</string>
-    <string name="search_hint">Rerchercher un utilisateur</string>
+    <string name="search_hint">Rechercher un utilisateur</string>
     <string name="search_error">Aucun utilisateur trouvé</string>
     <string name="search_no_location_found">Pas d\'emplcament trouvé pour l\'utilisateur</string>
     <string name="enable">Activer la localisation</string>
