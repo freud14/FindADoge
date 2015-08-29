@@ -5,5 +5,7 @@
 .DS_Store
 /build
 /captures
-google_maps_api.xml
-parse_api.xml
+/app/src/debug/res/values/parse_api.xml
+/app/src/debug/res/values/google_maps_api.xml
+/app/src/release/res/values/parse_api.xml
+/app/src/release/res/values/google_maps_api.xml

@@ -12,6 +12,13 @@ https://console.developers.google.com/flows/enableapi?apiid=maps_android_backend
     Once you have your key (it starts with "AIza"), replace the "google_maps_key"
     string in this file.
     -->
+
+    <!--
+    ===============================================================================
+    DO NOT MODIFY this file, create a /FindADoge/app/src/debug/res/values directory
+    (replace "debug" by "release" for the release build) and copy this file in it.
+    ===============================================================================
+    -->
     <string name="google_maps_key" translatable="false" templateMergeStrategy="preserve">
         YOUR_KEY_HERE
     </string>
