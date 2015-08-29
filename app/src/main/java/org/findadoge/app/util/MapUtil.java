@@ -6,7 +6,9 @@ import android.util.Log;
 import com.androidmapsextensions.GoogleMap;
 import com.androidmapsextensions.Marker;
 import com.androidmapsextensions.MarkerOptions;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 
+import org.findadoge.app.R;
 import org.findadoge.app.model.User;
 
 import java.util.ArrayList;
@@ -54,14 +56,15 @@ public class MapUtil {
             Marker marker = map.addMarker(new MarkerOptions()
                     .title(user.getUsername())
                     .position(user.getPosition())
-                    .snippet(user.getLastUpdateString(context)));
+                    .snippet(user.getLastUpdateString(context))
+                    .icon(BitmapDescriptorFactory.fromResource(R.mipmap.doge_icon)));
             userMarkerMap.put(user.getUsername(), marker);
 
             user.setMarker(marker);
             user.getMarker().setData(user);
         }
 
-        
+
         Marker m = map.getMarkerShowingInfoWindow();
         if (m != null && !m.isCluster()) {
             m.showInfoWindow();
