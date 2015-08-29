@@ -155,7 +155,7 @@ public class LocationUpdaterService extends Service
     }
 
     private void updateStatus() {
-        if (googleApiClient != null) {
+        if (googleApiClient != null && googleApiClient.isConnected()) {
             LocationServices.FusedLocationApi.removeLocationUpdates(googleApiClient, this);
 
             if (isEnable) {
