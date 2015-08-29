@@ -18,6 +18,8 @@ import com.google.android.gms.location.LocationServices;
 import com.parse.ParseGeoPoint;
 import com.parse.ParseUser;
 
+import org.findadoge.app.model.User;
+
 public class LocationUpdaterService extends Service
         implements ConnectionCallbacks, OnConnectionFailedListener, LocationListener,
         ILocationUpdaterService {
@@ -85,7 +87,7 @@ public class LocationUpdaterService extends Service
             ParseUser currentUser = ParseUser.getCurrentUser();
             if (currentUser != null) {
                 ParseGeoPoint parseLocation = new ParseGeoPoint(currentLocation.getLatitude(), currentLocation.getLongitude());
-                currentUser.put("currentPosition", parseLocation);
+                currentUser.put(User.POSITION_FIELD, parseLocation);
                 currentUser.saveInBackground();
             }
         }
@@ -135,7 +137,7 @@ public class LocationUpdaterService extends Service
 
         ParseUser currentUser = ParseUser.getCurrentUser();
         if (currentUser != null) {
-            currentUser.remove("currentPosition");
+            currentUser.remove(User.POSITION_FIELD);
             currentUser.saveInBackground();
         }
     }

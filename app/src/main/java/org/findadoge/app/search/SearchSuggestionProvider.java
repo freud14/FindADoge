@@ -11,6 +11,8 @@ import android.provider.BaseColumns;
 import com.parse.ParseException;
 import com.parse.ParseUser;
 
+import org.findadoge.app.model.User;
+
 import java.util.List;
 import java.util.Set;
 
@@ -23,11 +25,11 @@ import edu.gatech.gtri.stringmetric.StringMetric;
 public class SearchSuggestionProvider extends ContentProvider {
     private static final String TAG = "SearchSuggestProvider";
 
-    private static final Metric<ParseUser> damerauLevenshteinDistance = new Metric<ParseUser>() {
+    private static final Metric<User> damerauLevenshteinDistance = new Metric<User>() {
         private final StringMetric metric = new DamerauLevenshteinDistance();
 
         @Override
-        public int distance(ParseUser x, ParseUser y) {
+        public int distance(User x, User y) {
             return metric.distance(x.getUsername(), y.getUsername());
         }
     };
@@ -51,18 +53,18 @@ public class SearchSuggestionProvider extends ContentProvider {
         if (query.length() < 2)
             return cursor;
 
-        MutableBkTree<ParseUser> bkTree = new MutableBkTree<>(damerauLevenshteinDistance);
+        MutableBkTree<User> bkTree = new MutableBkTree<>(damerauLevenshteinDistance);
         try {
-            List<ParseUser> users = ParseUser.getQuery().find();
-            for (ParseUser user : users) {
+            List<User> users = User.getUserQuery().find();
+            for (User user : users) {
                 bkTree.add(user);
             }
 
-            BkTreeSearcher<ParseUser> searcher = new BkTreeSearcher<>(bkTree);
+            BkTreeSearcher<User> searcher = new BkTreeSearcher<>(bkTree);
 
-            ParseUser usernameSearch = new ParseUser();
+            User usernameSearch = new User();
             usernameSearch.setUsername(query);
-            Set<BkTreeSearcher.Match<? extends ParseUser>> matches = searcher.search(usernameSearch, 6);
+            Set<BkTreeSearcher.Match<? extends User>> matches = searcher.search(usernameSearch, 6);
 
             for (BkTreeSearcher.Match<? extends ParseUser> match : matches) {
                 String username = match.getMatch().getUsername();

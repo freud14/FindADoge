@@ -18,7 +18,6 @@ import android.os.IBinder;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.SearchView;
-import android.text.format.DateUtils;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.Menu;
@@ -26,6 +25,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.ListPopupWindow;
 import android.widget.ListView;
 import android.widget.PopupWindow;
 import android.widget.Toast;
@@ -33,23 +33,21 @@ import android.widget.Toast;
 import com.androidmapsextensions.ClusteringSettings;
 import com.androidmapsextensions.GoogleMap;
 import com.androidmapsextensions.Marker;
-import com.androidmapsextensions.MarkerOptions;
 import com.androidmapsextensions.SupportMapFragment;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.parse.FindCallback;
 import com.parse.GetCallback;
 import com.parse.ParseException;
-import com.parse.ParseGeoPoint;
 import com.parse.ParseQuery;
-import com.parse.ParseUser;
 
 import org.findadoge.app.ILocationUpdaterService.ILocationUpdaterBinder;
+import org.findadoge.app.model.User;
+import org.findadoge.app.util.MapUtil;
 import org.findadoge.app.util.UIUpdater;
 import org.findadoge.app.util.Util;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -58,7 +56,7 @@ public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
 
     private GoogleMap map;
-    private Map<String, UserMarker> userMarkerMap = new HashMap<>();
+    private Map<String, Marker> userMarkerMap = new HashMap<>();
 
     private boolean isInitializedCameraPosition = false;
     private Location lastLocation;
@@ -159,21 +157,19 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void findUser(String usernameQuery) {
-        ParseUser.getQuery().whereEqualTo("username", usernameQuery).getFirstInBackground(new GetCallback<ParseUser>() {
+        User.getUserQuery().whereEqualTo("username", usernameQuery).getFirstInBackground(new GetCallback<User>() {
             @Override
-            public void done(ParseUser object, ParseException e) {
+            public void done(User user, ParseException e) {
                 if (e != null) {
                     Toast.makeText(MainActivity.this, R.string.search_error, Toast.LENGTH_SHORT).show();
                     return;
                 }
 
-                ParseGeoPoint point = object.getParseGeoPoint("currentPosition");
-                if (point == null) {
+                LatLng latLng = user.getPosition();
+                if (latLng == null) {
                     Toast.makeText(MainActivity.this, R.string.search_no_location_found, Toast.LENGTH_SHORT).show();
                     return;
                 }
-
-                LatLng latLng = new LatLng(point.getLatitude(), point.getLongitude());
 
                 map.moveCamera(CameraUpdateFactory.newLatLng(latLng));
                 map.animateCamera(CameraUpdateFactory.zoomTo(15));
@@ -335,11 +331,12 @@ public class MainActivity extends AppCompatActivity {
             public View getInfoContents(Marker marker) {
                 if (marker.isCluster()) {
                     List<Marker> markers = marker.getMarkers();
-                    final List<UserMarker> userMarkers = new ArrayList<>();
-                    for (Marker mark : markers) {
-                        userMarkers.add((UserMarker) mark.getData());
+                    final List<User> users = new ArrayList<>();
+                    for (Marker userMarker : markers) {
+                        users.add((User) userMarker.getData());
                     }
 
+                    ListPopupWindow s = new ListPopupWindow(MainActivity.this);
                     final PopupWindow popupWindow = new PopupWindow(MainActivity.this);
                     ListView list = new ListView(MainActivity.this);
                     list.setBackgroundColor(Color.WHITE);
@@ -347,11 +344,11 @@ public class MainActivity extends AppCompatActivity {
                     popupWindow.setFocusable(true);
                     list.setAdapter(new ArrayAdapter<>(
                             MainActivity.this,
-                            android.R.layout.simple_dropdown_item_1line, userMarkers));
+                            android.R.layout.simple_dropdown_item_1line, users));
                     list.setOnItemClickListener(new AdapterView.OnItemClickListener() {
                         @Override
                         public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                            findUser(userMarkers.get(position).getTitle());
+                            findUser(users.get(position).getUsername());
                             popupWindow.dismiss();
                         }
                     });
@@ -387,106 +384,20 @@ public class MainActivity extends AppCompatActivity {
 
     private void updateMap() {
         if (map != null) {
-            ParseQuery<ParseUser> query = ParseUser.getQuery();
+            ParseQuery<User> query = User.getUserQuery();
 
-            query.whereNotEqualTo("username", ParseUser.getCurrentUser().getUsername());
-            query.whereExists("currentPosition");
-            query.findInBackground(new FindCallback<ParseUser>() {
+            query.whereNotEqualTo("username", User.getCurrentUser().getUsername());
+            query.whereExists(User.POSITION_FIELD);
+            query.findInBackground(new FindCallback<User>() {
                 @Override
-                public void done(List<ParseUser> objects, ParseException e) {
+                public void done(List<User> objects, ParseException e) {
                     if (e != null || objects == null) {
                         return;
                     }
 
-                    Map<String, ParseUser> userMap = new HashMap<>();
-                    for (ParseUser obj : objects) {
-                        userMap.put(obj.getUsername(), obj);
-                    }
-                    List<String> keyToDelete = new ArrayList<>();
-                    for (Map.Entry<String, UserMarker> entry : userMarkerMap.entrySet()) {
-                        String username = entry.getKey();
-                        ParseUser user = userMap.get(username);
-                        UserMarker userMarker = entry.getValue();
-                        if (user != null) {
-                            userMarker.setUser(user);
-                            Marker marker = userMarker.getMarker();
-                            marker.setTitle(userMarker.getTitle());
-                            marker.setPosition(userMarker.getPosition());
-                            marker.setSnippet(userMarker.getSnippet());
-                            userMap.remove(username);
-                        } else {
-                            userMarker.getMarker().remove();
-                            keyToDelete.add(username);
-                            userMarkerMap.remove(username);
-                        }
-                    }
-                    for (String key : keyToDelete) {
-                        userMarkerMap.remove(key);
-                    }
-                    for (ParseUser obj : userMap.values()) {
-                        UserMarker userMarker = new UserMarker(obj);
-                        userMarkerMap.put(obj.getUsername(), userMarker);
-
-                        userMarker.setMarker(map.addMarker(new MarkerOptions()
-                                .title(userMarker.getTitle())
-                                .position(userMarker.getPosition())
-                                .snippet(userMarker.getSnippet())));
-                        userMarker.getMarker().setData(userMarker);
-                    }
-                    Marker m = map.getMarkerShowingInfoWindow();
-                    if (m != null && !m.isCluster()) {
-                        m.showInfoWindow();
-                    }
-                    Log.v(TAG, "map update: " + objects.size());
+                    MapUtil.updateMap(objects, userMarkerMap, map, MainActivity.this);
                 }
             });
-        }
-    }
-
-    public class UserMarker {
-        private ParseUser user;
-        private Marker marker;
-
-        public UserMarker(ParseUser user) {
-            this.user = user;
-        }
-
-        public void setUser(ParseUser user) {
-            this.user = user;
-        }
-
-        public LatLng getPosition() {
-            ParseGeoPoint point = user.getParseGeoPoint("currentPosition");
-            return new LatLng(point.getLatitude(), point.getLongitude());
-        }
-
-        public String getTitle() {
-            return user.getUsername();
-        }
-
-        public String getSnippet() {
-            Date lastUpdateTime = user.getUpdatedAt();
-            long timeDiff = System.currentTimeMillis() - lastUpdateTime.getTime();
-            if (timeDiff < 60 * 1000) {
-                return getString(R.string.now);
-            } else {
-                return DateUtils.getRelativeDateTimeString(MainActivity.this,
-                        lastUpdateTime.getTime(),
-                        DateUtils.MINUTE_IN_MILLIS,
-                        DateUtils.WEEK_IN_MILLIS, 0).toString();
-            }
-        }
-
-        public Marker getMarker() {
-            return marker;
-        }
-
-        public void setMarker(Marker marker) {
-            this.marker = marker;
-        }
-
-        public String toString() {
-            return getTitle();
         }
     }
 }

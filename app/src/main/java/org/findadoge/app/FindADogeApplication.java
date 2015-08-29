@@ -3,6 +3,9 @@ package org.findadoge.app;
 import android.app.Application;
 
 import com.parse.Parse;
+import com.parse.ParseObject;
+
+import org.findadoge.app.model.User;
 
 public class FindADogeApplication extends Application {
 
@@ -10,7 +13,7 @@ public class FindADogeApplication extends Application {
     public void onCreate() {
         super.onCreate();
 
-        //ParseObject.registerSubclass(Armor.class);
+        ParseObject.registerSubclass(User.class);
         Parse.initialize(this);
     }
 }
