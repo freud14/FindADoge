@@ -14,8 +14,9 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.parse.ParseException;
-import com.parse.ParseUser;
 import com.parse.SignUpCallback;
+
+import org.findadoge.app.model.User;
 
 public class SignUpActivity extends Activity {
     // UI references.
@@ -96,7 +97,7 @@ public class SignUpActivity extends Activity {
         dialog.show();
 
         // Set up a new Parse user
-        ParseUser user = new ParseUser();
+        User user = new User();
         user.setUsername(username);
         user.setPassword(password);
 
